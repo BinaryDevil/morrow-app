@@ -3,6 +3,7 @@
     "name": "Morrow",
     "slug": "morrow-app",
     "version": "1.0.0",
+    "scheme": "morrow",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -26,6 +27,10 @@
         "projectId": "7e4ab69c-b3d5-42be-836b-5e83a225587c"
       }
     },
-    "owner": "binarydevil-team"
+    "owner": "binarydevil-team",
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
   }
 }
