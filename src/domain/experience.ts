@@ -16,6 +16,9 @@ export type ExperienceDraft = ExperienceDraftInput & {
 export function createExperienceDraft(
   input: ExperienceDraftInput,
 ): ExperienceDraft {
+  if (!input.placeId.trim()) {
+    throw new Error('Choose a place before sharing your experience.');
+  }
   return { ...input, kind: 'experience', createdAt: new Date().toISOString() };
 }
 

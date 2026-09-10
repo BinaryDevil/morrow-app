@@ -30,7 +30,15 @@
     "owner": "binarydevil-team",
     "plugins": [
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Morrow to access photos you choose to share.",
+          "cameraPermission": "Allow Morrow to take a photo for your experience.",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

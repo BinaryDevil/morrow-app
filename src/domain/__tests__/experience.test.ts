@@ -21,6 +21,12 @@ describe('experience creation seam', () => {
     });
   });
 
+  it('requires a confirmed place before creating an experience', () => {
+    expect(() => createExperienceDraft({ ...input, placeId: '   ' })).toThrow(
+      'Choose a place before sharing your experience.',
+    );
+  });
+
   it('treats the contextual heart as agreement, not a generic like', () => {
     expect(toggleContextualHeart([], 'maya')).toEqual(['maya']);
     expect(toggleContextualHeart(['maya', 'leo'], 'maya')).toEqual(['leo']);
