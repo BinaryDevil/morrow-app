@@ -21,6 +21,8 @@ type ExperienceCard = RankedExperience & {
   color: string;
 };
 
+type FeedScreen = 'for-you' | 'following' | 'saved';
+
 const experiences: ExperienceCard[] = [
   {
     id: 'friend-cafe',
@@ -103,6 +105,8 @@ function BootScreen({ onFinish }: { onFinish: () => void }) {
 
 export default function App() {
   const [isBooting, setBooting] = useState(true);
+  const [screen, setScreen] = useState<FeedScreen>('for-you');
+  const [selectedExperience, setSelectedExperience] = useState<ExperienceCard | null>(null);
   const [activeMood, setActiveMood] = useState('For you');
   const [heartedIds, setHeartedIds] = useState<string[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -119,6 +123,15 @@ export default function App() {
 
   const heart = (id: string) =>
     setHeartedIds((current) => toggleContextualHeart(current, id));
+
+  const visibleFeed = useMemo(() => {
+    if (screen === 'following') return feed.filter((experience) => experience.relationship === 'friend');
+    if (screen === 'saved') return feed.filter((experience) => savedIds.includes(experience.id));
+    return feed;
+  }, [feed, savedIds, screen]);
+
+  const screenTitle = screen === 'for-you' ? 'For you' : screen === 'following' ? 'Following' : 'Saved';
+  const screenHint = screen === 'for-you' ? 'Because you like cozy places' : screen === 'following' ? 'Fresh moments from your people' : 'Your next good feelings, kept close';
 
   if (isBooting) {
     return <BootScreen onFinish={() => setBooting(false)} />;
@@ -146,22 +159,23 @@ export default function App() {
         </ScrollView>
 
         <View style={styles.feedHeading}>
-          <Text style={styles.feedTitle}>For you</Text>
-          <Text style={styles.feedHint}>Because you like cozy places</Text>
+          <Text style={styles.feedTitle}>{screenTitle}</Text>
+          <Text style={styles.feedHint}>{screenHint}</Text>
         </View>
 
-        {feed.map((experience) => {
+        {visibleFeed.length === 0 && <View style={styles.emptyState}><Text style={styles.emptyTitle}>Nothing saved yet</Text><Text style={styles.emptyText}>Keep the places that make you curious, then return when the moment feels right.</Text><Pressable onPress={() => setScreen('for-you')}><Text style={styles.emptyAction}>Explore Morrow</Text></Pressable></View>}
+        {visibleFeed.map((experience) => {
           const isHearted = heartedIds.includes(experience.id);
           const isSaved = savedIds.includes(experience.id);
           return (
             <View key={experience.id} style={styles.card}>
-              <View style={[styles.photo, { backgroundColor: experience.color }]}>
+              <Pressable onPress={() => setSelectedExperience(experience)} style={[styles.photo, { backgroundColor: experience.color }]}>
                 <Text style={styles.photoMark}>{experience.tags[0]}</Text>
                 <View style={styles.photoGlow} />
-              </View>
+              </Pressable>
               <View style={styles.cardContent}>
                 <View style={styles.cardHeader}>
-                  <View><Text style={styles.place}>{experience.place}</Text><Text style={styles.area}>{experience.area}</Text></View>
+                  <Pressable onPress={() => setSelectedExperience(experience)}><Text style={styles.place}>{experience.place}</Text><Text style={styles.area}>{experience.area}</Text></Pressable>
                   <Text style={styles.distance}>{experience.distanceKm} km</Text>
                 </View>
                 <Text style={styles.message}>“{experience.message}”</Text>
@@ -182,6 +196,8 @@ export default function App() {
       </ScrollView>
 
       {isComposerOpen && <View style={styles.composer}><Text style={styles.composerTitle}>Share a small moment</Text><Text style={styles.composerPlace}>At Hillside Café · Steveston</Text><View style={styles.composerTags}>{['cozy', 'lively', 'catch-up', 'solo', 'reset'].map((tag) => <Pressable key={tag} onPress={() => setSelectedTags((tags) => tags.includes(tag) ? tags.filter((item) => item !== tag) : [...tags, tag])} style={[styles.composerTag, selectedTags.includes(tag) && styles.composerTagActive]}><Text style={[styles.composerTagText, selectedTags.includes(tag) && styles.composerTagTextActive]}>{tag}</Text></Pressable>)}</View><TextInput value={note} onChangeText={setNote} placeholder="How did it feel?" placeholderTextColor="#8C857D" style={styles.input} /><View style={styles.composerActions}><Pressable onPress={() => setComposerOpen(false)}><Text style={styles.cancel}>Cancel</Text></Pressable><Pressable onPress={() => { const draft = createExperienceDraft({ placeId: 'hillside-cafe', tags: selectedTags, caption: note || 'A small moment worth remembering.', visibility: 'followers' }); setCommunityExperiences((items) => [{ id: `you-${draft.createdAt}`, place: 'Hillside Café', area: 'Steveston', author: 'You · just now', message: draft.caption ?? '', relationship: 'friend', tags: draft.tags, distanceKm: 1.1, hoursOld: 0, contextualHearts: 0, color: '#D9B19B' }, ...items]); setNote(''); setSelectedTags(['cozy']); setComposerOpen(false); }} style={styles.post}><Text style={styles.postText}>Share</Text></Pressable></View></View>}
+      {selectedExperience && <View style={styles.detailSheet}><View style={[styles.detailHero, { backgroundColor: selectedExperience.color }]}><Pressable onPress={() => setSelectedExperience(null)} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable><Text style={styles.detailOverline}>{selectedExperience.tags[0]} · {selectedExperience.distanceKm} km away</Text><Text style={styles.detailPlace}>{selectedExperience.place}</Text><Text style={styles.detailArea}>{selectedExperience.area}</Text></View><View style={styles.detailContent}><Text style={styles.detailWhy}>WHY YOU’RE SEEING THIS</Text><Text style={styles.detailReason}>{selectedExperience.relationship === 'friend' ? 'A friend shared this feeling recently.' : 'It matches the kind of experience you enjoy.'}</Text><Text style={styles.detailQuote}>“{selectedExperience.message}”</Text><View style={styles.detailButtons}><Pressable onPress={() => setSavedIds((items) => items.includes(selectedExperience.id) ? items.filter((id) => id !== selectedExperience.id) : [...items, selectedExperience.id])} style={styles.detailSave}><Text style={styles.detailSaveText}>{savedIds.includes(selectedExperience.id) ? 'Saved' : 'Save place'}</Text></Pressable><Pressable style={styles.navigate}><Text style={styles.navigateText}>Navigate</Text></Pressable></View></View></View>}
+      <View style={styles.tabBar}>{([{ id: 'for-you', label: 'For you', icon: '✦' }, { id: 'following', label: 'Following', icon: '◌' }, { id: 'saved', label: 'Saved', icon: '⌑' }] as const).map((item) => <Pressable key={item.id} onPress={() => setScreen(item.id)} style={styles.tab}><Text style={[styles.tabIcon, screen === item.id && styles.tabActive]}>{item.icon}</Text><Text style={[styles.tabLabel, screen === item.id && styles.tabActive]}>{item.label}</Text></Pressable>)}</View>
       <Pressable onPress={() => setComposerOpen(true)} style={styles.fab}><Text style={styles.fabText}>＋</Text></Pressable>
     </SafeAreaView>
   );
@@ -192,7 +208,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#171321',
   },
-  scroll: { padding: 22, paddingBottom: 110 },
+  scroll: { padding: 22, paddingBottom: 130 },
   topbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { fontSize: 28, fontWeight: '800', color: '#FFF8FF', letterSpacing: -1.2 },
   location: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: '#F5D76E', marginTop: 2 },
@@ -221,5 +237,6 @@ const styles = StyleSheet.create({
   actionText: { color: '#EEE6F7', fontSize: 12, fontWeight: '700' }, saveAction: { padding: 8 }, saveText: { color: '#D7C6FF', fontSize: 13, fontWeight: '800' },
   fab: { position: 'absolute', right: 24, bottom: 26, width: 58, height: 58, borderRadius: 29, backgroundColor: '#A17CFF', borderWidth: 2, borderColor: '#F5D76E', alignItems: 'center', justifyContent: 'center', shadowColor: '#F5D76E', shadowOpacity: 0.38, shadowRadius: 14, elevation: 4 }, fabText: { color: '#FFF', fontSize: 28, fontWeight: '300', marginTop: -2 },
   composer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 22, backgroundColor: '#2A203D', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.19)', borderTopLeftRadius: 26, borderTopRightRadius: 26, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 }, composerTitle: { fontSize: 19, fontWeight: '700', color: '#FFF8FF' }, composerPlace: { color: '#C8BFE0', fontSize: 12, marginTop: 4, fontWeight: '700' }, composerTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 }, composerTag: { backgroundColor: 'rgba(255,255,255,0.12)', paddingVertical: 6, paddingHorizontal: 9, borderRadius: 14 }, composerTagActive: { backgroundColor: '#9B7CFF' }, composerTagText: { color: '#E2D9EA', fontSize: 11, fontWeight: '700' }, composerTagTextActive: { color: '#FFF' }, input: { backgroundColor: 'rgba(255,255,255,0.12)', padding: 14, minHeight: 72, borderRadius: 14, marginTop: 14, color: '#FFF', textAlignVertical: 'top' }, composerActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 20, marginTop: 14 }, cancel: { color: '#D2C7E3', fontWeight: '700' }, post: { backgroundColor: '#9B7CFF', paddingVertical: 10, paddingHorizontal: 17, borderRadius: 18 }, postText: { color: '#FFF', fontWeight: '800' },
+  emptyState: { marginTop: 24, padding: 24, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' }, emptyTitle: { color: '#FFF8FF', fontSize: 18, fontWeight: '700' }, emptyText: { color: '#C3B8D7', lineHeight: 20, marginTop: 8 }, emptyAction: { color: '#F5D76E', fontWeight: '800', marginTop: 17 }, detailSheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#211A32', borderTopLeftRadius: 30, borderTopRightRadius: 30, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, elevation: 12 }, detailHero: { minHeight: 176, padding: 22, justifyContent: 'flex-end' }, close: { position: 'absolute', top: 15, right: 16, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(20,15,33,0.32)', alignItems: 'center', justifyContent: 'center' }, closeText: { color: '#FFF', fontSize: 25, lineHeight: 27 }, detailOverline: { color: '#FFF', fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.1 }, detailPlace: { color: '#FFF', fontSize: 30, fontWeight: '800', letterSpacing: -1, marginTop: 7 }, detailArea: { color: '#FFF', fontSize: 13, marginTop: 3 }, detailContent: { padding: 22 }, detailWhy: { color: '#F5D76E', fontSize: 10, fontWeight: '800', letterSpacing: 1.1 }, detailReason: { color: '#EEE8F5', fontSize: 15, lineHeight: 21, marginTop: 8 }, detailQuote: { color: '#CFC5DD', fontSize: 15, lineHeight: 22, fontStyle: 'italic', marginTop: 18 }, detailButtons: { flexDirection: 'row', gap: 10, marginTop: 21 }, detailSave: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.11)' }, detailSaveText: { color: '#FFF', fontWeight: '800' }, navigate: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 18, backgroundColor: '#9B7CFF' }, navigateText: { color: '#FFF', fontWeight: '800' }, tabBar: { position: 'absolute', left: 20, right: 92, bottom: 20, height: 62, borderRadius: 25, backgroundColor: 'rgba(43,34,65,0.94)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }, tab: { alignItems: 'center', minWidth: 58 }, tabIcon: { color: '#AFA2C2', fontSize: 17 }, tabLabel: { color: '#AFA2C2', fontSize: 10, fontWeight: '700', marginTop: 3 }, tabActive: { color: '#F5D76E' },
   boot: { flex: 1, backgroundColor: '#160B28', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, bootOrb: { position: 'absolute', borderRadius: 999 }, bootOrbOne: { width: 360, height: 360, backgroundColor: '#6D2E90', top: -110, left: -105, opacity: 0.9 }, bootOrbTwo: { width: 320, height: 320, backgroundColor: '#F5D76E', bottom: -140, right: -95, opacity: 0.72 }, bootContent: { alignItems: 'center', padding: 30 }, bootBrand: { color: '#F4C8FF', fontSize: 62, lineHeight: 66, fontWeight: '900', fontStyle: 'italic', letterSpacing: -3, textShadowColor: '#8E37C1', textShadowRadius: 18, textShadowOffset: { width: 0, height: 5 } }, bootSlogan: { color: '#FFF4FF', fontSize: 15, fontWeight: '700', letterSpacing: 0.2, marginTop: 18, textAlign: 'center' },
 });
