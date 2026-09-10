@@ -19,6 +19,9 @@ export function createExperienceDraft(
   if (!input.placeId.trim()) {
     throw new Error('Choose a place before sharing your experience.');
   }
+  if (!input.photoUri && !input.caption?.trim()) {
+    throw new Error('Add a photo or caption before sharing your experience.');
+  }
   return { ...input, kind: 'experience', createdAt: new Date().toISOString() };
 }
 

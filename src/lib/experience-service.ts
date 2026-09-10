@@ -11,6 +11,7 @@ type ExperienceRow = {
   id: string;
   author_id: string;
   place_id: string;
+  photo_path: string | null;
   photo_url: string | null;
   caption: string | null;
   tags: string[];
@@ -18,12 +19,21 @@ type ExperienceRow = {
   created_at: string;
 };
 
-function toPersistedExperience(row: ExperienceRow): PersistedExperience {
+async function toPersistedExperience(row: ExperienceRow): Promise<PersistedExperience> {
+  let photoUri: string | undefined;
+  if (row.photo_path) {
+    if (!supabase) throw new Error(supabaseConfigurationError);
+    const { data, error } = await supabase.storage.from('experience-photos').createSignedUrl(row.photo_path, 60 * 60);
+    if (error || !data?.signedUrl) throw error ?? new Error('Could not load an experience photo.');
+    photoUri = data.signedUrl;
+  } else if (row.photo_url) {
+    photoUri = row.photo_url;
+  }
   return {
     id: row.id,
     authorId: row.author_id,
     placeId: row.place_id,
-    photoUri: row.photo_url ?? undefined,
+    photoUri,
     caption: row.caption ?? undefined,
     tags: row.tags ?? [],
     visibility: row.visibility,
@@ -49,9 +59,7 @@ async function uploadExperiencePhoto(userId: string, uri: string): Promise<strin
     { contentType: response.headers.get('content-type') ?? 'image/jpeg' },
   );
   if (error) throw error;
-  const { data } = await supabase.storage.from('experience-photos').createSignedUrl(path, 60 * 60 * 24 * 365);
-  if (!data?.signedUrl) throw new Error('Could not prepare the selected photo.');
-  return data.signedUrl;
+  return path;
 }
 
 export async function createExperience(
@@ -60,11 +68,11 @@ export async function createExperience(
 ): Promise<PersistedExperience> {
   if (!supabase) throw new Error(supabaseConfigurationError);
   const draft = createExperienceDraft(input);
-  const photoUrl = draft.photoUri ? await uploadExperiencePhoto(userId, draft.photoUri) : null;
+  const photoPath = draft.photoUri ? await uploadExperiencePhoto(userId, draft.photoUri) : null;
   const { data, error } = await supabase.from('experiences').insert({
     author_id: userId,
     place_id: draft.placeId,
-    photo_url: photoUrl,
+    photo_path: photoPath,
     caption: draft.caption?.trim() || null,
     tags: draft.tags,
     visibility: draft.visibility,
@@ -73,9 +81,12 @@ export async function createExperience(
   return toPersistedExperience(data as ExperienceRow);
 }
 
-export async function loadExperiences(userId: string): Promise<PersistedExperience[]> {
+export async function loadExperiences(viewerId: string): Promise<PersistedExperience[]> {
   if (!supabase) throw new Error(supabaseConfigurationError);
-  const { data, error } = await supabase.from('experiences').select('*').eq('author_id', userId).order('created_at', { ascending: false });
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (user?.id !== viewerId) throw new Error('Could not verify your Morrow account.');
+  const { data, error } = await supabase.from('experiences').select('*').order('created_at', { ascending: false });
   if (error) throw error;
-  return (data as ExperienceRow[]).map(toPersistedExperience);
+  return Promise.all((data as ExperienceRow[]).map(toPersistedExperience));
 }

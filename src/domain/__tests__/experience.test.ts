@@ -27,6 +27,12 @@ describe('experience creation seam', () => {
     );
   });
 
+  it('requires either a photo or a nonblank caption', () => {
+    expect(() => createExperienceDraft({ ...input, photoUri: undefined, caption: '   ' })).toThrow(
+      'Add a photo or caption before sharing your experience.',
+    );
+  });
+
   it('treats the contextual heart as agreement, not a generic like', () => {
     expect(toggleContextualHeart([], 'maya')).toEqual(['maya']);
     expect(toggleContextualHeart(['maya', 'leo'], 'maya')).toEqual(['leo']);
