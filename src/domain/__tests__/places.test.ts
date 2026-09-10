@@ -16,6 +16,11 @@ describe('Richmond place catalogue seam', () => {
       place.provenance === 'morrow-curated' && place.verification === 'verified',
     )).toBe(true);
 
+    expect(seedPlaces.every((place) =>
+      Number.isFinite(place.coordinates.latitude) && Number.isFinite(place.coordinates.longitude),
+    )).toBe(true);
+    expect(seedPlaces.every((place) => place.coordinateAccuracy === 'exact')).toBe(true);
+
     expect(browsePlaces(seedPlaces, 'coffee').map((place) => place.id)).toEqual([
       'hillside-cafe',
     ]);
@@ -34,6 +39,8 @@ describe('Richmond place catalogue seam', () => {
       provenance: 'community-suggested',
       verification: 'provisional',
       suggestedAt: '2026-09-10T12:00:00.000Z',
+      coordinates: { latitude: 49.1666, longitude: -123.1336 },
+      coordinateAccuracy: 'approximate',
     });
   });
 
