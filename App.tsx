@@ -16,7 +16,7 @@ import {
   type Place,
   type PlaceCategory,
 } from './src/domain/places';
-import { rankExperiences, type RankedExperience } from './src/domain/ranking';
+import { rankRecommendations, type RankedExperience } from './src/domain/ranking';
 import { followRelationshipLabel, isFollowing, visibleFollowingExperiences } from './src/domain/following';
 import { loadAccountProfile, saveAccountProfile, signInWithGoogle, signInWithPassword, signOut, signUpWithPassword } from './src/lib/account-service';
 import { createExperience, loadExperiences, type PersistedExperience } from './src/lib/experience-service';
@@ -24,7 +24,7 @@ import { followPerson, loadLocalPeople, unfollowPerson, type LocalPerson } from 
 import { loadProvisionalPlaces, saveProvisionalPlaces } from './src/lib/place-catalogue-service';
 import { supabase, supabaseConfigurationError } from './src/lib/supabase';
 
-type Experience = RankedExperience & { place: string; area: string; message: string; color: string; photoUri?: string; authorId?: string };
+type Experience = RankedExperience & { place: string; area: string; message: string; color: string; photoUri?: string; authorId?: string; explanation?: string };
 const places: Experience[] = [
   { id: 'follower-cafe', place: 'Hillside Café', area: 'Steveston', message: 'Soft rain, warm light, easy conversation.', relationship: 'follower', tags: ['cozy', 'catch-up', 'coffee'], distanceKm: 1.1, hoursOld: 4, contextualHearts: 3, color: '#D4AE50' },
   { id: 'public-park', place: 'Iona Beach', area: 'Sea Island', message: 'The kind of sunset walk that resets the whole week.', relationship: 'taste-match', tags: ['outdoors', 'solo', 'reset'], distanceKm: 6.2, hoursOld: 22, contextualHearts: 8, color: '#A4C6BE' },
@@ -32,6 +32,7 @@ const places: Experience[] = [
 ];
 const tasteOptions = ['cozy', 'outdoors', 'lively', 'drinks', 'friends', 'solo', 'reset'];
 const guestTastePreferences = ['cozy'];
+const categoryIntentTags: Record<PlaceCategory, string[]> = { food: ['food'], drink: ['drinks'], coffee: ['coffee'], outdoors: ['outdoors'], culture: ['culture'] };
 const pendingSavedPlacesKey = (userId: string) => `morrow.pending-saved-place-ids.${userId}`;
 
 function AuthScreen({ onClose, prompt }: { onClose: () => void; prompt?: string }) {
@@ -73,8 +74,8 @@ export default function App() {
   useEffect(() => { if (!supabase) { setLoading(false); return; } supabase.auth.getSession().then(({ data, error: sessionError }) => { if (sessionError) setError(sessionError.message); setSession(data.session); setLoading(false); }); const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => { setSession(nextSession); if (nextSession) setAuthOpen(false); }); return () => listener.subscription.unsubscribe(); }, []);
   useEffect(() => { loadProvisionalPlaces().then((stored) => { setCataloguePlaces((current) => [...current, ...stored.filter((place) => !current.some((candidate) => candidate.id === place.id))]); setHasLoadedProvisionalPlaces(true); }).catch(() => setError('Could not restore your community suggestions.')); }, []);
   useEffect(() => { if (!session?.user) { setProfile(null); setExperiences([]); setPeople([]); return; } setLoading(true); setError(''); Promise.all([loadAccountProfile(session.user), loadExperiences(session.user.id).catch(() => []), loadLocalPeople(session.user.id).catch(() => [])]).then(async ([remoteProfile, remoteExperiences, localPeople]) => { const pendingKey = pendingSavedPlacesKey(remoteProfile.userId); const pending = await AsyncStorage.getItem(pendingKey); const savedPlaceIds = pending ? JSON.parse(pending) as string[] : remoteProfile.savedPlaceIds; const profileWithIntent = { ...remoteProfile, savedPlaceIds }; setProfile(profileWithIntent); setExperiences(remoteExperiences); setPeople(localPeople); if (pending) { try { await saveAccountProfile(remoteProfile, profileWithIntent); await AsyncStorage.removeItem(pendingKey); } catch { setError('Your saved places will retry when Morrow reconnects.'); } } }).catch((reason) => setError(reason instanceof Error ? reason.message : 'Could not load your Morrow.')).finally(() => setLoading(false)); }, [profileAttempt, session?.user]);
-  const feed = useMemo(() => { const shared = experiences.map((experience): Experience => { const place = cataloguePlaces.find((candidate) => candidate.id === experience.placeId); return { id: experience.id, authorId: experience.authorId, place: place?.name ?? 'A place in Richmond', area: place?.area ?? 'Richmond, BC', message: experience.caption || `A moment shared at ${place?.name ?? 'a local place'}.`, relationship: 'follower', tags: experience.tags, distanceKm: 0, hoursOld: Math.max(0, (Date.now() - new Date(experience.createdAt).getTime()) / 3_600_000), contextualHearts: 0, color: '#A17CFF', photoUri: experience.photoUri }; }); return [...shared, ...rankExperiences(places, { desiredTags: profile?.tastePreferences ?? guestTastePreferences, currentHour: 18 }) as Experience[]]; }, [cataloguePlaces, experiences, profile?.tastePreferences]);
   const followingIds = useMemo(() => new Set(people.filter((person) => isFollowing(person.relationship)).map((person) => person.userId)), [people]);
+  const feed = useMemo(() => { const desiredTags = profile?.tastePreferences ?? guestTastePreferences; const shared = experiences.map((experience): Experience => { const place = cataloguePlaces.find((candidate) => candidate.id === experience.placeId); const relationship = followingIds.has(experience.authorId) ? 'follower' : experience.tags.some((tag) => desiredTags.includes(tag)) ? 'taste-match' : 'public'; return { id: experience.id, authorId: experience.authorId, place: place?.name ?? 'A place in Richmond', area: place?.area ?? 'Richmond, BC', message: experience.caption || `A moment shared at ${place?.name ?? 'a local place'}.`, relationship, tags: experience.tags, distanceKm: 0, hoursOld: Math.max(0, (Date.now() - new Date(experience.createdAt).getTime()) / 3_600_000), contextualHearts: 0, color: '#A17CFF', photoUri: experience.photoUri }; }); return rankRecommendations([...shared, ...places], { desiredTags, intentTags: activeCategory === 'all' ? undefined : categoryIntentTags[activeCategory], currentHour: new Date().getHours() }).map(({ experience, explanation }) => ({ ...experience, message: `For you · ${experience.message}\nWhy this appeared: ${explanation}`, explanation })); }, [activeCategory, cataloguePlaces, experiences, followingIds, profile?.tastePreferences]);
   const followingFeed = useMemo(() => visibleFollowingExperiences(feed, followingIds), [feed, followingIds]);
   const visibleCatalogue = useMemo(() => browsePlaces(cataloguePlaces, activeCategory), [activeCategory, cataloguePlaces]);
   const provisionalPlaces = useMemo(() => cataloguePlaces.filter((place) => place.verification === 'provisional'), [cataloguePlaces]);

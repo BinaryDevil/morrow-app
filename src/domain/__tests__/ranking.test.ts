@@ -1,4 +1,4 @@
-import { rankExperiences, type RankedExperience } from '../ranking';
+import { rankExperiences, rankRecommendations, type RankedExperience } from '../ranking';
 
 const experiences: RankedExperience[] = [
   {
@@ -36,5 +36,38 @@ describe('contextual feed ranking seam', () => {
     });
 
     expect(ranked[0].id).toBe('public-popular');
+  });
+
+  it('keeps a follower ahead of otherwise comparable local discoveries', () => {
+    const comparableExperiences: RankedExperience[] = [
+      { ...experiences[0], id: 'public', relationship: 'public', tags: ['cozy'], distanceKm: 1, hoursOld: 4, contextualHearts: 3 },
+      { ...experiences[0], id: 'taste-match', relationship: 'taste-match', tags: ['cozy'], distanceKm: 1, hoursOld: 4, contextualHearts: 3 },
+      { ...experiences[0], id: 'follower', relationship: 'follower', tags: ['cozy'], distanceKm: 1, hoursOld: 4, contextualHearts: 3 },
+    ];
+
+    expect(rankExperiences(comparableExperiences, { desiredTags: ['cozy'], currentHour: 18 }).map(({ id }) => id)).toEqual([
+      'follower',
+      'taste-match',
+      'public',
+    ]);
+  });
+
+  it('explains each recommendation using the signals that brought it forward', () => {
+    const recommendations = rankRecommendations([experiences[1]], {
+      desiredTags: ['cozy'],
+      intentTags: ['catch-up'],
+      currentHour: 18,
+    });
+
+    expect(recommendations[0].explanation).toBe('From someone you follow · Fits your catch-up mood · 1.1 km away, shared recently, loved in a similar context');
+  });
+
+  it('uses the current part of the day as an immediate intent when none is selected', () => {
+    const recommendations = rankRecommendations([
+      { ...experiences[0], id: 'drinks', tags: ['drinks'] },
+      { ...experiences[0], id: 'coffee', tags: ['coffee'] },
+    ], { desiredTags: [], currentHour: 9 });
+
+    expect(recommendations[0].experience.id).toBe('coffee');
   });
 });
