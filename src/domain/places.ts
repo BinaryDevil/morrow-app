@@ -22,7 +22,7 @@ export type PlaceSuggestion = Pick<Place, 'name' | 'area' | 'category'> & {
   coordinates?: PlaceCoordinates;
 };
 
-const richmondCentreCoordinates: PlaceCoordinates = { latitude: 49.1666, longitude: -123.1336 };
+export const morrowRichmondCentre: PlaceCoordinates = { latitude: 49.1666, longitude: -123.1336 };
 
 export const seedPlaces: Place[] = [
   { id: 'the-story-cafe', name: 'The Story Café', area: 'Bridgeport', category: 'food', coordinates: { latitude: 49.1934, longitude: -123.1296 }, coordinateAccuracy: 'exact', provenance: 'morrow-curated', verification: 'verified' },
@@ -68,10 +68,22 @@ export function suggestPlace(
   return {
     id: uniqueId,
     ...suggestion,
-    coordinates: suggestion.coordinates ?? richmondCentreCoordinates,
+    coordinates: suggestion.coordinates ?? morrowRichmondCentre,
     coordinateAccuracy: suggestion.coordinates ? 'exact' : 'approximate',
     provenance: 'community-suggested',
     verification: 'provisional',
     suggestedAt,
   };
+}
+
+export function distanceFromMorrowKm(place: Pick<Place, 'coordinates'>): number {
+  const toRadians = (degrees: number) => degrees * Math.PI / 180;
+  const latitudeDifference = toRadians(place.coordinates.latitude - morrowRichmondCentre.latitude);
+  const longitudeDifference = toRadians(place.coordinates.longitude - morrowRichmondCentre.longitude);
+  const latitudeStart = toRadians(morrowRichmondCentre.latitude);
+  const latitudeEnd = toRadians(place.coordinates.latitude);
+  const haversine = Math.sin(latitudeDifference / 2) ** 2
+    + Math.cos(latitudeStart) * Math.cos(latitudeEnd) * Math.sin(longitudeDifference / 2) ** 2;
+
+  return Math.round(2 * 6_371 * Math.asin(Math.sqrt(haversine)) * 10) / 10;
 }

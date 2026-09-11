@@ -5,6 +5,7 @@ import { supabase, supabaseConfigurationError } from './supabase';
 export type PersistedExperience = ExperienceDraft & {
   id: string;
   authorId: string;
+  contextualHearts: number;
 };
 
 type ExperienceRow = {
@@ -17,6 +18,7 @@ type ExperienceRow = {
   tags: string[];
   visibility: Visibility;
   created_at: string;
+  contextual_heart_count: number | null;
 };
 
 async function toPersistedExperience(row: ExperienceRow): Promise<PersistedExperience> {
@@ -39,6 +41,7 @@ async function toPersistedExperience(row: ExperienceRow): Promise<PersistedExper
     visibility: row.visibility,
     kind: 'experience',
     createdAt: row.created_at,
+    contextualHearts: row.contextual_heart_count ?? 0,
   };
 }
 

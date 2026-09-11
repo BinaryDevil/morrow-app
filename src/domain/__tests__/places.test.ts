@@ -1,5 +1,6 @@
 import {
   browsePlaces,
+  distanceFromMorrowKm,
   findPlace,
   seedPlaces,
   suggestPlace,
@@ -48,5 +49,10 @@ describe('Richmond place catalogue seam', () => {
     expect(findPlace(seedPlaces, ' hillside café ', 'STEVESTON')).toMatchObject({
       id: 'hillside-cafe',
     });
+  });
+
+  it('measures a catalogue place from Morrow’s Richmond centre', () => {
+    expect(distanceFromMorrowKm(seedPlaces[4])).toBeCloseTo(0.5, 1);
+    expect(distanceFromMorrowKm(seedPlaces[2])).toBeGreaterThan(5);
   });
 });
