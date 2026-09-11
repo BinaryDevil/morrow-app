@@ -1,6 +1,7 @@
 import { supabase, supabaseConfigurationError } from './supabase';
 
 type BlockRow = { blocker_id: string; blocked_id: string };
+type ExperienceBlockRow = { experience_id: string };
 type ReportTarget = { target_profile_id: string } | { target_experience_id: string };
 
 async function verifyAccount(userId: string) {
@@ -41,6 +42,24 @@ export async function blockPerson(userId: string, personId: string): Promise<voi
   await verifyAccount(userId);
   if (userId === personId) throw new Error('You cannot block your own profile.');
   const { error } = await supabase!.rpc('block_person', { person_id: personId });
+  if (error) throw error;
+}
+
+export async function loadBlockedExperienceIds(userId: string): Promise<Set<string>> {
+  await verifyAccount(userId);
+  const { data, error } = await supabase!.from('experience_blocks')
+    .select('experience_id')
+    .eq('blocker_id', userId);
+  if (error) throw error;
+  return new Set((data as ExperienceBlockRow[] ?? []).map((block) => block.experience_id));
+}
+
+export async function blockExperience(userId: string, experienceId: string): Promise<void> {
+  await verifyAccount(userId);
+  const { error } = await supabase!.from('experience_blocks').insert({
+    blocker_id: userId,
+    experience_id: experienceId,
+  });
   if (error) throw error;
 }
 

@@ -25,6 +25,13 @@ export function isProfileVisibleTo({
   return viewerId === profileId || isPublic;
 }
 
+export function visibleUnblockedExperiences<T extends { id: string }>(
+  experiences: readonly T[],
+  blockedExperienceIds: ReadonlySet<string>,
+): T[] {
+  return experiences.filter((experience) => !blockedExperienceIds.has(experience.id));
+}
+
 export function locationForExperience(
   location: ExperienceLocation,
   disclosure: LocationDisclosure,

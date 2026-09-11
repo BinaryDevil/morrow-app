@@ -2,6 +2,7 @@ import {
   defaultLocationDisclosure,
   isProfileVisibleTo,
   locationForExperience,
+  visibleUnblockedExperiences,
 } from '../safety';
 
 describe('beta safety seam', () => {
@@ -14,6 +15,17 @@ describe('beta safety seam', () => {
     expect(isProfileVisibleTo({
       viewerId: 'maya', profileId: 'leo', isPublic: true, blockedPersonIds: new Set(['leo']),
     })).toBe(false);
+  });
+
+  it('hides an individually blocked experience without hiding the author’s other experiences', () => {
+    const experiences = [
+      { id: 'morning-coffee', authorId: 'leo' },
+      { id: 'evening-walk', authorId: 'leo' },
+    ];
+
+    expect(visibleUnblockedExperiences(experiences, new Set(['morning-coffee']))).toEqual([
+      experiences[1],
+    ]);
   });
 
   it('shares an area, not an exact place or distance, by default', () => {
