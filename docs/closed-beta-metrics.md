@@ -2,7 +2,7 @@
 
 The invited cohort is the set of rows in `public.beta_cohort_members`. Add a tester after their account profile exists; their individual four-week window begins at `invited_at`.
 
-The app records an authenticated `app_opened` event when a cohort member returns to Morrow. It also records these meaningful discovery actions: viewing an experience, saving a place, sharing an experience, and following a person. Events from people outside the cohort are ignored by `record_beta_event`.
+The app records an authenticated return when a cohort member opens Morrow. It also records meaningful discovery actions for viewing an experience, saving a place, sharing an experience, and following a person. `public.beta_event_types` is the authoritative event taxonomy; events from people outside the cohort are ignored by `record_beta_event`.
 
 Before evaluating the closed beta, the team should enter its agreed rates (as decimals from 0 to 1):
 
