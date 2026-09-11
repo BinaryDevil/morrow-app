@@ -20,6 +20,7 @@ export const supabase: SupabaseClient | null = supabaseUrl && supabaseKey
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      flowType: 'pkce',
     },
   })
   : null;
