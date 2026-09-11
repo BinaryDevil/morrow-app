@@ -1,4 +1,4 @@
-export type Relationship = 'friend' | 'taste-match' | 'public';
+export type Relationship = 'follower' | 'taste-match' | 'public';
 
 export type RankedExperience = {
   id: string;
@@ -15,7 +15,7 @@ export type FeedContext = {
 };
 
 const relationshipWeight: Record<Relationship, number> = {
-  friend: 60,
+  follower: 60,
   'taste-match': 38,
   public: 18,
 };

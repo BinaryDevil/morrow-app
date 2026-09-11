@@ -10,8 +10,8 @@ const experiences: RankedExperience[] = [
     contextualHearts: 12,
   },
   {
-    id: 'friend-match',
-    relationship: 'friend',
+    id: 'follower-match',
+    relationship: 'follower',
     tags: ['cozy', 'catch-up'],
     distanceKm: 1.1,
     hoursOld: 14,
@@ -20,13 +20,13 @@ const experiences: RankedExperience[] = [
 ];
 
 describe('contextual feed ranking seam', () => {
-  it('prioritizes a matching friend experience over a popular public one', () => {
+  it('prioritizes a matching follower experience over a popular public one', () => {
     expect(
       rankExperiences(experiences, {
         desiredTags: ['cozy', 'catch-up'],
         currentHour: 18,
       }).map((item) => item.id),
-    ).toEqual(['friend-match', 'public-popular']);
+    ).toEqual(['follower-match', 'public-popular']);
   });
 
   it('uses contextual hearts as one signal rather than the whole ranking', () => {
