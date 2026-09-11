@@ -16,6 +16,7 @@ describe('experience creation seam', () => {
   it('creates an intentional, location-linked experience draft', () => {
     expect(createExperienceDraft(input)).toEqual({
       ...input,
+      locationDisclosure: 'area',
       kind: 'experience',
       createdAt: expect.any(String),
     });

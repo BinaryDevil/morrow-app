@@ -1,4 +1,5 @@
 import type { ExperienceDraft, ExperienceDraftInput, Visibility } from '../domain/experience';
+import { defaultLocationDisclosure, type LocationDisclosure } from '../domain/safety';
 import { createExperienceDraft } from '../domain/experience';
 import { supabase, supabaseConfigurationError } from './supabase';
 
@@ -17,6 +18,7 @@ type ExperienceRow = {
   caption: string | null;
   tags: string[];
   visibility: Visibility;
+  location_disclosure: LocationDisclosure | null;
   created_at: string;
   contextual_heart_count: number | null;
 };
@@ -39,6 +41,7 @@ async function toPersistedExperience(row: ExperienceRow): Promise<PersistedExper
     caption: row.caption ?? undefined,
     tags: row.tags ?? [],
     visibility: row.visibility,
+    locationDisclosure: row.location_disclosure ?? defaultLocationDisclosure,
     kind: 'experience',
     createdAt: row.created_at,
     contextualHearts: row.contextual_heart_count ?? 0,
@@ -79,6 +82,7 @@ export async function createExperience(
     caption: draft.caption?.trim() || null,
     tags: draft.tags,
     visibility: draft.visibility,
+    location_disclosure: draft.locationDisclosure,
   }).select('*').single();
   if (error) throw error;
   return toPersistedExperience(data as ExperienceRow);

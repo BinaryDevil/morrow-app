@@ -1,3 +1,5 @@
+import { defaultLocationDisclosure, type LocationDisclosure } from './safety';
+
 export type Visibility = 'followers' | 'private';
 
 export type ExperienceDraftInput = {
@@ -6,11 +8,13 @@ export type ExperienceDraftInput = {
   tags: string[];
   caption?: string;
   visibility: Visibility;
+  locationDisclosure?: LocationDisclosure;
 };
 
 export type ExperienceDraft = ExperienceDraftInput & {
   kind: 'experience';
   createdAt: string;
+  locationDisclosure: LocationDisclosure;
 };
 
 export function createExperienceDraft(
@@ -22,7 +26,12 @@ export function createExperienceDraft(
   if (!input.photoUri && !input.caption?.trim()) {
     throw new Error('Add a photo or caption before sharing your experience.');
   }
-  return { ...input, kind: 'experience', createdAt: new Date().toISOString() };
+  return {
+    ...input,
+    locationDisclosure: input.locationDisclosure ?? defaultLocationDisclosure,
+    kind: 'experience',
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export function toggleContextualHeart(
