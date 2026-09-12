@@ -1,5 +1,6 @@
 import {
   browsePlaces,
+  createProvisionalPinnedPlace,
   distanceFromMorrowKm,
   findPlace,
   seedPlaces,
@@ -43,6 +44,35 @@ describe('Richmond place catalogue seam', () => {
       coordinates: { latitude: 49.1666, longitude: -123.1336 },
       coordinateAccuracy: 'approximate',
     });
+  });
+
+  it('turns a dropped pin with a person-provided address into an exact provisional place', () => {
+    expect(createProvisionalPinnedPlace({
+      name: 'Late-night noodles',
+      address: '  8111 Anderson Road, Richmond, BC  ',
+      category: 'food',
+      coordinates: { latitude: 49.171, longitude: -123.139 },
+    }, '2026-09-11T12:00:00.000Z')).toEqual({
+      id: 'late-night-noodles',
+      name: 'Late-night noodles',
+      area: 'Richmond',
+      address: '8111 Anderson Road, Richmond, BC',
+      category: 'food',
+      coordinates: { latitude: 49.171, longitude: -123.139 },
+      coordinateAccuracy: 'exact',
+      provenance: 'community-suggested',
+      verification: 'provisional',
+      suggestedAt: '2026-09-11T12:00:00.000Z',
+    });
+  });
+
+  it('requires an address before a dropped pin can become a provisional place', () => {
+    expect(() => createProvisionalPinnedPlace({
+      name: 'Late-night noodles',
+      address: '   ',
+      category: 'food',
+      coordinates: { latitude: 49.171, longitude: -123.139 },
+    })).toThrow('Add the address shown for this pin before continuing.');
   });
 
   it('uses a normalized name and area to find the same catalogue place', () => {

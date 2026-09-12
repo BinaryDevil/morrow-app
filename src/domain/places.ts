@@ -10,6 +10,7 @@ export type Place = {
   id: string;
   name: string;
   area: string;
+  address?: string;
   category: PlaceCategory;
   coordinates: PlaceCoordinates;
   coordinateAccuracy: CoordinateAccuracy;
@@ -19,7 +20,13 @@ export type Place = {
 };
 
 export type PlaceSuggestion = Pick<Place, 'name' | 'area' | 'category'> & {
+  address?: string;
   coordinates?: PlaceCoordinates;
+};
+
+export type PinnedPlaceSuggestion = Pick<Place, 'name' | 'category' | 'coordinates'> & {
+  address: string;
+  area?: string;
 };
 
 export const morrowRichmondCentre: PlaceCoordinates = { latitude: 49.1666, longitude: -123.1336 };
@@ -74,6 +81,23 @@ export function suggestPlace(
     verification: 'provisional',
     suggestedAt,
   };
+}
+
+export function createProvisionalPinnedPlace(
+  suggestion: PinnedPlaceSuggestion,
+  suggestedAt = new Date().toISOString(),
+  existingIds: string[] = [],
+): Place {
+  const address = suggestion.address.trim();
+  if (!address) throw new Error('Add the address shown for this pin before continuing.');
+
+  return suggestPlace({
+    name: suggestion.name.trim() || 'Pinned location',
+    area: suggestion.area?.trim() || 'Richmond',
+    address,
+    category: suggestion.category,
+    coordinates: suggestion.coordinates,
+  }, suggestedAt, existingIds);
 }
 
 export function distanceFromMorrowKm(place: Pick<Place, 'coordinates'>): number {
