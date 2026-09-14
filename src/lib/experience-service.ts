@@ -1,4 +1,5 @@
 import type { ExperienceDraft, ExperienceDraftInput, Visibility } from '../domain/experience';
+import { randomUUID } from 'expo-crypto';
 import { defaultLocationDisclosure, type LocationDisclosure } from '../domain/safety';
 import { createExperienceDraft } from '../domain/experience';
 import { supabase, supabaseConfigurationError } from './supabase';
@@ -51,7 +52,7 @@ async function toPersistedExperience(row: ExperienceRow): Promise<PersistedExper
 function photoPath(userId: string, uri: string): string {
   const extension = uri.split('?')[0].split('.').pop()?.toLowerCase();
   const safeExtension = extension && /^[a-z0-9]{1,5}$/.test(extension) ? extension : 'jpg';
-  return `${userId}/${crypto.randomUUID()}.${safeExtension}`;
+  return `${userId}/${randomUUID()}.${safeExtension}`;
 }
 
 async function uploadExperiencePhoto(userId: string, uri: string): Promise<string> {
