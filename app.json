@@ -33,6 +33,15 @@
     },
     "owner": "binarydevil-team",
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#171321",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain"
+        }
+      ],
       "expo-secure-store",
       "expo-web-browser",
       [
