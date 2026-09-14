@@ -23,9 +23,11 @@ describe('Richmond place catalogue seam', () => {
     )).toBe(true);
     expect(seedPlaces.every((place) => place.coordinateAccuracy === 'exact')).toBe(true);
 
-    expect(browsePlaces(seedPlaces, 'coffee').map((place) => place.id)).toEqual([
-      'hillside-cafe',
-    ]);
+    expect(seedPlaces.length).toBeGreaterThanOrEqual(50);
+    expect(seedPlaces.every((place) => Boolean(place.imageUri))).toBe(true);
+    expect(browsePlaces(seedPlaces, 'coffee').map((place) => place.id)).toEqual(
+      expect.arrayContaining(['hillside-cafe', 'steveston-coffee']),
+    );
   });
 
   it('turns an unlisted community suggestion into a provisional place without blocking the experience', () => {
