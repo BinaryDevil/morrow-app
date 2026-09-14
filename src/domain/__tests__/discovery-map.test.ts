@@ -1,4 +1,4 @@
-import { buildDiscoveryMapMarkers, experienceForDiscoveryMarker } from '../discovery-map';
+import { buildDiscoveryMapMarkers, experienceForDiscoveryMarker, markerTreatmentForCategory } from '../discovery-map';
 import { morrowRichmondCentre, seedPlaces } from '../places';
 
 describe('discovery map marker seam', () => {
@@ -14,12 +14,14 @@ describe('discovery map marker seam', () => {
         coordinates: seedPlaces[2].coordinates,
         title: 'Hillside Café',
         subtitle: 'From someone you follow',
+        treatment: { color: '#D6A66A', icon: '☕', label: 'Coffee' },
       },
       {
         id: 'second',
         coordinates: morrowRichmondCentre,
         title: 'A place in Minoru',
         subtitle: 'Matches your taste for culture',
+        treatment: { color: '#F1C75B', icon: '✺', label: 'Culture' },
       },
     ]);
   });
@@ -32,7 +34,13 @@ describe('discovery map marker seam', () => {
       coordinates: morrowRichmondCentre,
       title: 'Unknown',
       subtitle: 'Nearby',
+      treatment: { color: '#8F82A8', icon: '✦', label: 'Recommendation' },
     }]);
+  });
+
+  it('uses explicit category treatments and a coherent fallback for new categories', () => {
+    expect(markerTreatmentForCategory('culture')).toEqual({ color: '#F1C75B', icon: '✺', label: 'Culture' });
+    expect(markerTreatmentForCategory('future-category')).toEqual({ color: '#8F82A8', icon: '✦', label: 'Recommendation' });
   });
 
   it('resolves a tapped marker to the same eligible recommendation that produced it', () => {

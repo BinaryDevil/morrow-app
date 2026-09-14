@@ -10,12 +10,32 @@ export type DiscoveryMapInput = {
   locationDisclosure: LocationDisclosure;
 };
 
+export type DiscoveryMarkerTreatment = {
+  color: string;
+  icon: string;
+  label: string;
+};
+
 export type DiscoveryMapMarker = {
   id: string;
   coordinates: PlaceCoordinates;
   title: string;
   subtitle: string;
+  treatment: DiscoveryMarkerTreatment;
 };
+
+const defaultMarkerTreatment: DiscoveryMarkerTreatment = { color: '#8F82A8', icon: '✦', label: 'Recommendation' };
+const markerTreatments: Record<string, DiscoveryMarkerTreatment> = {
+  food: { color: '#F28B6D', icon: '●', label: 'Food' },
+  drink: { color: '#C996F5', icon: '◆', label: 'Drinks' },
+  coffee: { color: '#D6A66A', icon: '☕', label: 'Coffee' },
+  outdoors: { color: '#76C7A0', icon: '✦', label: 'Outdoors' },
+  culture: { color: '#F1C75B', icon: '✺', label: 'Culture' },
+};
+
+export function markerTreatmentForCategory(category?: string): DiscoveryMarkerTreatment {
+  return markerTreatments[category ?? ''] ?? defaultMarkerTreatment;
+}
 
 export function experienceForDiscoveryMarker<T extends { id: string }>(
   markerId: string,
@@ -36,6 +56,7 @@ export function buildDiscoveryMapMarkers(
       coordinates: experience.locationDisclosure === 'exact' && place ? place.coordinates : morrowRichmondCentre,
       title: experience.place,
       subtitle: experience.explanation,
+      treatment: markerTreatmentForCategory(place?.category),
     };
   });
 }
