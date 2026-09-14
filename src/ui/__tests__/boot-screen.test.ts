@@ -1,4 +1,4 @@
-import { bootScreenMinimumDurationMs, waitForBootScreen } from '../boot-screen';
+import { bootScreenMinimumDurationMs, bootScreenName, bootScreenSlogan, waitForBootScreen } from '../boot-screen';
 
 describe('app boot screen', () => {
   beforeEach(() => jest.useFakeTimers());
@@ -14,5 +14,10 @@ describe('app boot screen', () => {
     await jest.advanceTimersByTimeAsync(1);
     await boot;
     expect(completed).toBe(true);
+  });
+
+  it('identifies Morrow and its promise while the app opens', () => {
+    expect(bootScreenName).toBe('Morrow');
+    expect(bootScreenSlogan).toBe('Find your next favorite experience');
   });
 });

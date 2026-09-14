@@ -33,7 +33,7 @@ import { recordBetaEventBestEffort } from './src/lib/beta-analytics-service';
 import { supabase, supabaseConfigurationError } from './src/lib/supabase';
 import { MorrowSurface } from './src/ui/morrow-surface';
 import { discoverySwitcherOption, type DiscoverySurface } from './src/ui/discovery-navigation';
-import { waitForBootScreen } from './src/ui/boot-screen';
+import { bootScreenName, bootScreenSlogan, waitForBootScreen } from './src/ui/boot-screen';
 
 void SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ duration: 250, fade: true });
@@ -155,7 +155,7 @@ export default function App() {
   const blockExperienceFromFeed = async (experienceId: string) => { if (!profile) return; await blockExperience(profile.userId, experienceId); setBlockedExperienceIds((current) => new Set([...current, experienceId])); setExperiences((current) => current.filter((experience) => experience.id !== experienceId)); };
   const reportPerson = async (personId: string, reason: string) => { if (profile) await reportProfile(profile.userId, personId, reason); };
   const reportSharedExperience = async (experienceId: string, reason: string) => { if (profile) await reportExperience(profile.userId, experienceId, reason); };
-  if (!bootScreenComplete || loading) return <SafeAreaView style={styles.container}><StatusBar style="light" /><View style={styles.loading}><Text style={styles.brand}>Morrow</Text><ActivityIndicator color="#F5D76E" size="large" /><Text style={styles.loadingText}>Opening Morrow…</Text></View></SafeAreaView>;
+  if (!bootScreenComplete || loading) return <SafeAreaView style={styles.container}><StatusBar style="light" /><View style={styles.loading}><Image source={require('./assets/splash-icon.png')} resizeMode="contain" style={{ height: 128, marginBottom: 4, width: 128 }} /><Text style={styles.brand}>{bootScreenName}</Text><Text style={{ color: '#D8D0E4', fontSize: 16, marginBottom: 10, textAlign: 'center' }}>{bootScreenSlogan}</Text><ActivityIndicator color="#F5D76E" size="large" /></View></SafeAreaView>;
   if (authOpen) return <AuthScreen onClose={() => setAuthOpen(false)} prompt={authPrompt} />;
   if (session && !profile) return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.error}>{error || 'Your account needs a moment.'}</Text><Pressable onPress={() => setProfileAttempt((attempt) => attempt + 1)} style={styles.primarySmall}><Text style={styles.primaryText}>Try again</Text></Pressable><Pressable onPress={signOut}><Text style={styles.link}>Sign out</Text></Pressable></View></SafeAreaView>;
   if (locationPickerOpen && profile) return <SafeAreaView style={styles.container}><StatusBar style="light" /><MapLocationPicker places={cataloguePlaces} onClose={() => setLocationPickerOpen(false)} onSelect={(place) => { if (place.verification === 'provisional') addProvisionalPlace(place); setComposerPlace(place); setLocationPickerOpen(false); setComposerOpen(true); }} /></SafeAreaView>;
