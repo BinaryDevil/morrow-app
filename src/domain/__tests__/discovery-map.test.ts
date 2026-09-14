@@ -1,4 +1,4 @@
-import { buildDiscoveryMapMarkers } from '../discovery-map';
+import { buildDiscoveryMapMarkers, experienceForDiscoveryMarker } from '../discovery-map';
 import { morrowRichmondCentre, seedPlaces } from '../places';
 
 describe('discovery map marker seam', () => {
@@ -33,5 +33,15 @@ describe('discovery map marker seam', () => {
       title: 'Unknown',
       subtitle: 'Nearby',
     }]);
+  });
+
+  it('resolves a tapped marker to the same eligible recommendation that produced it', () => {
+    const visibleFeed = [
+      { id: 'first', place: 'Hillside Café' },
+      { id: 'second', place: 'Iona Beach' },
+    ];
+
+    expect(experienceForDiscoveryMarker('second', visibleFeed)).toBe(visibleFeed[1]);
+    expect(experienceForDiscoveryMarker('not-visible', visibleFeed)).toBeUndefined();
   });
 });

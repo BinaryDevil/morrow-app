@@ -17,6 +17,13 @@ export type DiscoveryMapMarker = {
   subtitle: string;
 };
 
+export function experienceForDiscoveryMarker<T extends { id: string }>(
+  markerId: string,
+  visibleFeed: readonly T[],
+): T | undefined {
+  return visibleFeed.find((experience) => experience.id === markerId);
+}
+
 export function buildDiscoveryMapMarkers(
   feed: readonly DiscoveryMapInput[],
   catalogue: readonly Place[],
