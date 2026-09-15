@@ -7,6 +7,7 @@ export type DiscoveryMapInput = {
   place: string;
   area: string;
   explanation: string;
+  tags?: readonly string[];
   locationDisclosure: LocationDisclosure;
 };
 
@@ -37,6 +38,15 @@ export function markerTreatmentForCategory(category?: string): DiscoveryMarkerTr
   return markerTreatments[category ?? ''] ?? defaultMarkerTreatment;
 }
 
+function categoryFromTags(tags: readonly string[] = []): string | undefined {
+  if (tags.includes('food')) return 'food';
+  if (tags.includes('drinks')) return 'drink';
+  if (tags.includes('coffee')) return 'coffee';
+  if (tags.includes('outdoors')) return 'outdoors';
+  if (tags.includes('culture')) return 'culture';
+  return undefined;
+}
+
 export function experienceForDiscoveryMarker<T extends { id: string }>(
   markerId: string,
   visibleFeed: readonly T[],
@@ -56,7 +66,7 @@ export function buildDiscoveryMapMarkers(
       coordinates: experience.locationDisclosure === 'exact' && place ? place.coordinates : morrowRichmondCentre,
       title: experience.place,
       subtitle: experience.explanation,
-      treatment: markerTreatmentForCategory(place?.category),
+      treatment: markerTreatmentForCategory(place?.category ?? categoryFromTags(experience.tags)),
     };
   });
 }

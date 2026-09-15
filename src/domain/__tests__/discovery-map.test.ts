@@ -28,13 +28,13 @@ describe('discovery map marker seam', () => {
 
   it('keeps a visible experience on the map when its place is unavailable in the catalogue', () => {
     expect(buildDiscoveryMapMarkers([
-      { id: 'missing', placeId: 'removed-place', place: 'Unknown', area: 'Richmond', explanation: 'Nearby', locationDisclosure: 'exact' },
+      { id: 'missing', placeId: 'removed-place', place: 'Unknown', area: 'Richmond', explanation: 'Nearby', locationDisclosure: 'exact', tags: ['food'] },
     ], seedPlaces)).toEqual([{
       id: 'missing',
       coordinates: morrowRichmondCentre,
       title: 'Unknown',
       subtitle: 'Nearby',
-      treatment: { color: '#8F82A8', icon: '✦', label: 'Recommendation' },
+      treatment: { color: '#F28B6D', icon: '●', label: 'Food' },
     }]);
   });
 

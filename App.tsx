@@ -217,8 +217,9 @@ export default function App() {
   if (session && !profile) return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.error}>{error || 'Your account needs a moment.'}</Text><Pressable onPress={() => setProfileAttempt((attempt) => attempt + 1)} style={styles.primarySmall}><Text style={styles.primaryText}>Try again</Text></Pressable><Pressable onPress={signOut}><Text style={styles.link}>Sign out</Text></Pressable></View></SafeAreaView>;
   if (locationPickerOpen && profile) return <SafeAreaView style={styles.container}><StatusBar style="light" /><MapLocationPicker places={cataloguePlaces} onClose={() => setLocationPickerOpen(false)} onSelect={(place) => { if (place.verification === 'provisional') addProvisionalPlace(place); setComposerPlace(place); setLocationPickerOpen(false); setComposerOpen(true); }} /></SafeAreaView>;
   const visibleFeed = destination === 'following' ? followingFeed : filteredFeed;
-  const mapMarkers = buildDiscoveryMapMarkers(visibleFeed, cataloguePlaces);
-  const openMarkerExperience = (markerId: string) => { const experience = experienceForDiscoveryMarker(markerId, visibleFeed); if (experience) { setSelectedPlace(experience); if (profile) void recordBetaEventBestEffort('experience_viewed'); } };
+  const mapFeed = destination === 'following' ? visibleFollowingExperiences(feed, followingIds) : feed;
+  const mapMarkers = buildDiscoveryMapMarkers(mapFeed, cataloguePlaces);
+  const openMarkerExperience = (markerId: string) => { const experience = experienceForDiscoveryMarker(markerId, mapFeed); if (experience) { setSelectedPlace(experience); if (profile) void recordBetaEventBestEffort('experience_viewed'); } };
   return <View style={styles.container}>
     <StatusBar style="light" />
     {discoverySurface === 'map' ? <DiscoveryTransition surface={discoverySurface}><View style={styles.mapDiscovery}>
