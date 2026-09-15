@@ -5,6 +5,8 @@ describe('app boot screen', () => {
   afterEach(() => jest.useRealTimers());
 
   it('remains visible long enough to be seen when startup completes immediately', async () => {
+    expect(bootScreenMinimumDurationMs).toBe(1500);
+
     let completed = false;
     const boot = waitForBootScreen().then(() => { completed = true; });
 

@@ -79,11 +79,34 @@ function useReducedMotion() {
   return reducedMotion;
 }
 
+function BootScreen() {
+  const reducedMotion = useReducedMotion();
+  const entrance = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (reducedMotion) {
+      entrance.setValue(1);
+      return;
+    }
+
+    entrance.setValue(0);
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: 640,
+      delay: 80,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [entrance, reducedMotion]);
+
+  return <SafeAreaView style={styles.container}><StatusBar style="light" /><View style={styles.loading}><Animated.View style={{ alignItems: 'center', opacity: entrance, transform: [{ translateY: entrance.interpolate({ inputRange: [0, 1], outputRange: [66, 0] }) }] }}><Image source={require('./assets/splash-icon.png')} resizeMode="contain" style={{ height: 128, marginBottom: 4, width: 128 }} /><Text style={styles.brand}>{bootScreenName}</Text><Text style={{ color: '#D8D0E4', fontSize: 16, marginBottom: 10, textAlign: 'center' }}>{bootScreenSlogan}</Text></Animated.View><Animated.View style={{ opacity: entrance.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) }}><ActivityIndicator color="#F5D76E" size="large" /></Animated.View></View></SafeAreaView>;
+}
+
 function DiscoveryTransition({ children, surface }: { children: ReactNode; surface: DiscoverySurface }) {
   const reducedMotion = useReducedMotion();
   const progress = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
-  useEffect(() => { if (reducedMotion) { progress.setValue(1); return; } progress.setValue(0); Animated.timing(progress, { toValue: 1, duration: 210, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(); }, [progress, reducedMotion, surface]);
-  return <Animated.View style={[styles.discoveryTransition, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>{children}</Animated.View>;
+  useEffect(() => { if (reducedMotion) { progress.setValue(1); return; } progress.setValue(0); Animated.timing(progress, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(); }, [progress, reducedMotion, surface]);
+  return <Animated.View style={[styles.discoveryTransition, { opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }] }]}>{children}</Animated.View>;
 }
 
 function SavePlaceButton({ place, saved, onSave }: { place: Experience; saved: boolean; onSave: () => void }) {
@@ -169,7 +192,7 @@ function DiscoveryIntentTabs({ destination, profile, onChange, onSignIn }: { des
 export default function App() {
   const [session, setSession] = useState<Session | null>(null); const [profile, setProfile] = useState<AccountProfile | null>(null); const [experiences, setExperiences] = useState<PersistedExperience[]>([]); const [people, setPeople] = useState<LocalPerson[]>([]); const [blockedPersonIds, setBlockedPersonIds] = useState<Set<string>>(new Set()); const [blockedExperienceIds, setBlockedExperienceIds] = useState<Set<string>>(new Set()); const [destination, setDestination] = useState<'explore' | 'following'>('explore'); const [discoverySurface, setDiscoverySurface] = useState<'feed' | 'map'>('feed'); const [loading, setLoading] = useState(true); const [bootScreenComplete, setBootScreenComplete] = useState(false); const [accountOpen, setAccountOpen] = useState(false); const [peopleOpen, setPeopleOpen] = useState(false); const [authOpen, setAuthOpen] = useState(false); const [authPrompt, setAuthPrompt] = useState<string>(); const [composerOpen, setComposerOpen] = useState(false); const [composerPlace, setComposerPlace] = useState<Place | null>(null); const [locationPickerOpen, setLocationPickerOpen] = useState(false); const [selectedPlace, setSelectedPlace] = useState<Experience | null>(null); const [error, setError] = useState(''); const [profileAttempt, setProfileAttempt] = useState(0); const [cataloguePlaces, setCataloguePlaces] = useState<Place[]>(seedPlaces); const [activeCategory, setActiveCategory] = useState<PlaceCategory | 'all'>('all'); const [activeActivity, setActiveActivity] = useState<ActivityFilterId>(); const [hasLoadedProvisionalPlaces, setHasLoadedProvisionalPlaces] = useState(false);
   useEffect(() => { void waitForBootScreen().then(() => setBootScreenComplete(true)); }, []);
-  useEffect(() => { if (bootScreenComplete) void SplashScreen.hideAsync(); }, [bootScreenComplete]);
+  useEffect(() => { void SplashScreen.hideAsync(); }, []);
   useEffect(() => { if (!supabase) { setLoading(false); return; } supabase.auth.getSession().then(({ data, error: sessionError }) => { if (sessionError) setError(sessionError.message); setSession(data.session); setLoading(false); }); const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => { setSession(nextSession); if (nextSession) setAuthOpen(false); }); return () => listener.subscription.unsubscribe(); }, []);
   useEffect(() => { loadProvisionalPlaces().then((stored) => { setCataloguePlaces((current) => [...current, ...stored.filter((place) => !current.some((candidate) => candidate.id === place.id))]); setHasLoadedProvisionalPlaces(true); }).catch(() => setError('Could not restore your community suggestions.')); }, []);
   useEffect(() => { if (!session?.user) { setProfile(null); setExperiences([]); setPeople([]); setBlockedPersonIds(new Set()); setBlockedExperienceIds(new Set()); return; } setLoading(true); setError(''); Promise.all([loadAccountProfile(session.user), loadExperiences(session.user.id).catch(() => []), loadLocalPeople(session.user.id).catch(() => []), loadBlockedPersonIds(session.user.id).catch(() => new Set<string>()), loadBlockedExperienceIds(session.user.id).catch(() => new Set<string>())]).then(async ([remoteProfile, remoteExperiences, localPeople, blockedIds, blockedExperienceIds]) => { const pendingKey = pendingSavedPlacesKey(remoteProfile.userId); const pending = await AsyncStorage.getItem(pendingKey); const savedPlaceIds = pending ? JSON.parse(pending) as string[] : remoteProfile.savedPlaceIds; const profileWithIntent = { ...remoteProfile, savedPlaceIds }; setProfile(profileWithIntent); setExperiences(remoteExperiences); setPeople(localPeople); setBlockedPersonIds(blockedIds); setBlockedExperienceIds(blockedExperienceIds); void recordBetaEventBestEffort('app_opened'); if (pending) { try { await saveAccountProfile(remoteProfile, profileWithIntent); await AsyncStorage.removeItem(pendingKey); } catch { setError('Your saved places will retry when Morrow reconnects.'); } } }).catch((reason) => setError(reason instanceof Error ? reason.message : 'Could not load your Morrow.')).finally(() => setLoading(false)); }, [profileAttempt, session?.user]);
@@ -189,7 +212,7 @@ export default function App() {
   const blockExperienceFromFeed = async (experienceId: string) => { if (!profile) return; await blockExperience(profile.userId, experienceId); setBlockedExperienceIds((current) => new Set([...current, experienceId])); setExperiences((current) => current.filter((experience) => experience.id !== experienceId)); };
   const reportPerson = async (personId: string, reason: string) => { if (profile) await reportProfile(profile.userId, personId, reason); };
   const reportSharedExperience = async (experienceId: string, reason: string) => { if (profile) await reportExperience(profile.userId, experienceId, reason); };
-  if (!bootScreenComplete || loading) return <SafeAreaView style={styles.container}><StatusBar style="light" /><View style={styles.loading}><Image source={require('./assets/splash-icon.png')} resizeMode="contain" style={{ height: 128, marginBottom: 4, width: 128 }} /><Text style={styles.brand}>{bootScreenName}</Text><Text style={{ color: '#D8D0E4', fontSize: 16, marginBottom: 10, textAlign: 'center' }}>{bootScreenSlogan}</Text><ActivityIndicator color="#F5D76E" size="large" /></View></SafeAreaView>;
+  if (!bootScreenComplete || loading) return <BootScreen />;
   if (authOpen) return <AuthScreen onClose={() => setAuthOpen(false)} prompt={authPrompt} />;
   if (session && !profile) return <SafeAreaView style={styles.container}><View style={styles.loading}><Text style={styles.error}>{error || 'Your account needs a moment.'}</Text><Pressable onPress={() => setProfileAttempt((attempt) => attempt + 1)} style={styles.primarySmall}><Text style={styles.primaryText}>Try again</Text></Pressable><Pressable onPress={signOut}><Text style={styles.link}>Sign out</Text></Pressable></View></SafeAreaView>;
   if (locationPickerOpen && profile) return <SafeAreaView style={styles.container}><StatusBar style="light" /><MapLocationPicker places={cataloguePlaces} onClose={() => setLocationPickerOpen(false)} onSelect={(place) => { if (place.verification === 'provisional') addProvisionalPlace(place); setComposerPlace(place); setLocationPickerOpen(false); setComposerOpen(true); }} /></SafeAreaView>;
