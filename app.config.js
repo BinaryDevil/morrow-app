@@ -16,5 +16,7 @@ module.exports = ({ config }) => ({
   plugins: [
     ...app.expo.plugins,
     ['react-native-maps', mapsConfig],
+    // Temporary Xcode 27 / iOS 27 compatibility until Expo generates a scene lifecycle.
+    'expo-ios-scene-lifecycle-plugin',
   ],
 });
