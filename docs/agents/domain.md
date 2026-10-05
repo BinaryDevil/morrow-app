@@ -1,25 +1,5 @@
-# Domain Docs
+# Domain documentation workflow
 
-How engineering skills should consume this repo's domain documentation.
+Before project work, read [product context](../../CONTEXT.md) and [current status](../project-status.md). Before code changes, read [architecture](../architecture.md) and any relevant decisions under `docs/adr/` if that directory exists.
 
-## Before exploring
-
-- Read `CONTEXT.md` at the repository root when it exists.
-- Read relevant decisions under `docs/adr/` when they exist.
-
-If these files do not exist, proceed silently. The domain-modeling workflow creates them when terminology or an architectural decision has actually been settled.
-
-## File structure
-
-This is a single-context repository:
-
-```
-/
-├── CONTEXT.md
-├── docs/adr/
-└── src/
-```
-
-## Vocabulary and decisions
-
-Use terminology defined in `CONTEXT.md` for issues, tests, and implementation proposals. If output contradicts an existing ADR, surface the conflict rather than silently overriding it.
+This repository has one product context. Use its vocabulary in issues, tests, and proposals. Keep implementation/readiness gaps in the status review rather than redefining product intent to match a temporary limitation. Surface conflicts with recorded decisions before changing them. Create decision records only when a consequential decision is actually settled; no ADR directory currently exists.
